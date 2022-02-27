@@ -37,11 +37,12 @@ infrastructure:
 		--stack-name $(PROJECT_NAME)-infrastructure \
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
-			MavenProjectName=$${MAVEN_PROJECT_NAME} \
-			DesiredCount=1
+			MavenProjectName=$${MAVEN_PROJECT_NAME}
+
 cicd:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
+	aws ecr create-repository --repository-name $${MAVEN_PROJECT_NAME} || true && \
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--template-file ./infra/pipeline/cicd.yml \

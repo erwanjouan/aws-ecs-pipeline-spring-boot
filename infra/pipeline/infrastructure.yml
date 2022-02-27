@@ -10,6 +10,7 @@ Parameters:
     Default: 8080
   DesiredCount:
     Type: String
+    Default: 1
   AlbPort:
     Type: String
     Default: 80

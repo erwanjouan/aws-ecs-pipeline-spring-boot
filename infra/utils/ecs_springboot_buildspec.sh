@@ -29,7 +29,7 @@ phases:
       - cp infra/pipeline/*.yml .
 
 artifacts:
-  files: ./cicd.yml
+  files: ./infrastructure.yml
 
 cache:
   paths:

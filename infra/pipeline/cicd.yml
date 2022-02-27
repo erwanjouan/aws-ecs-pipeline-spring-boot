@@ -63,6 +63,9 @@ Resources:
                 Action: ecr:GetAuthorizationToken
                 Resource: '*'
               - Effect: Allow
+                Action: cloudformation:CreateStack
+                Resource: '*'
+              - Effect: Allow
                 Resource: '*'
                 Action:
                   - ecr:GetDownloadUrlForLayer
@@ -155,6 +158,9 @@ Resources:
                 Effect: Allow
                 Action:
                   - codecommit:*
+              - Effect: Allow
+                Action: cloudformation:CreateStack
+                Resource: '*'
       RoleName: !Sub 'code-pipeline-role-${ProjectName}'
     Type: AWS::IAM::Role
   ProjectPipeline:
@@ -208,7 +214,8 @@ Resources:
                 StackName: !Sub ${ProjectName}-infrastructure
                 Capabilities: CAPABILITY_IAM
                 RoleArn: arn:aws:iam::467420073914:role/CloudformationRole
-                TemplatePath: !Sub ${ProjectName}-zip::cicd.yml
+                TemplatePath: !Sub ${ProjectName}-zip::infrastructure.yml
+                ParameterOverrides: !Sub '{"ProjectName": "${ProjectName}","MavenProjectName": "${MavenProjectName}"}'
               InputArtifacts:
                 - Name: !Sub '${ProjectName}-zip'
     Type: AWS::CodePipeline::Pipeline
