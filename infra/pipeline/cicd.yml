@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A Java SpringBoot application built on ECS with CodeBuild, CodeCommit and CodePipeline
+Parameters:
+  ProjectName:
+    Type: String
+  ProjectVersion:
+    Type: String
+  BranchName:
+    Type: String
+    Default: main
+  DeploymentConfigName:
+    Type: String
+    Default: CodeDeployDefault.HalfAtATime
+
+Resources:
+
+  ############
+  # CodeBuild
+  ############
+
+  ArtifactOutputBucket:
+    Description: Bucket for output
+    Properties:
+      BucketName: !Sub '${ProjectName}-output'
+    Type: AWS::S3::Bucket
+  CodeBuildServiceRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: allow-to-push-to-S3
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:List*
+                Resource:
+                  - !Sub "arn:aws:s3:::${ArtifactOutputBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactOutputBucket}/*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogStreams
+                  - logs:GetLogEvents
+                  - logs:PutLogEvents
+                  - logs:PutRetentionPolicy
+                Resource: "arn:aws:logs:*"
+              - Effect: Allow
+                Action: codecommit:GitPull
+                Resource: '*'
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Effect: Allow
+                Resource: '*'
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+    Type: AWS::IAM::Role
+
+  CodeBuildJavaProject:
+    DependsOn: CodeBuildServiceRole
+    Properties:
+      Name: !Ref ProjectName
+      ServiceRole: !Ref CodeBuildServiceRole
+      Source:
+        Type: CODEPIPELINE
+      SourceVersion: main
+      Artifacts:
+        Type: CODEPIPELINE
+        OverrideArtifactName: true
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Type: PLAINTEXT
+            Value: eu-west-1
+          - Name: PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref ProjectName
+          - Name: PROJECT_VERSION
+            Type: PLAINTEXT
+            Value: !Ref ProjectVersion
+          - Name: GIT_COMMIT_ID
+            Type: PLAINTEXT
+            Value: '#{GitVariables.CommitId}'
+      Cache:
+        Location: !Sub '${ArtifactOutputBucket}/cache'
+        Type: S3
+    Type: AWS::CodeBuild::Project
+
+  #############
+  # CodeDeploy
+  #############
+
+  CodeDeployer:
+    Properties:
+      Description: Provides CodeDeploy service access to expand tags and interact with Auto Scaling on your behalf.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codedeploy.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole
+      Path: /
+    Type: AWS::IAM::Role
+
+  CodeDeployApplication:
+    Properties:
+      ApplicationName: !Sub ${ProjectName}-app
+      ComputePlatform: ECS
+    Type: AWS::CodeDeploy::Application
+
+  CodeDeployDeploymentGroup:
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      ServiceRoleArn: !GetAtt CodeDeployer.Arn
+      DeploymentConfigName: !Ref DeploymentConfigName
+      DeploymentGroupName: !Ref ProjectName
+      ECSServices:
+        - ClusterName: !ImportValue EcsFargateService
+          ServiceName: !ImportValue EcsFargateService
+      LoadBalancerInfo:
+        TargetGroupInfoList:
+          - Name: !ImportValue TargetGroupName
+          - Name: !ImportValue TargetGroup2Name
+      DeploymentStyle:
+        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+        DeploymentType: IN_PLACE
+    Type: AWS::CodeDeploy::DeploymentGroup
+
+  ###############
+  # CodePipeline
+  ###############
+
+  CodePipelineRole:
+    Description: Role for CodePipeline
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AWSCodePipeline_FullAccess'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonS3FullAccess'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - iam:PassRole
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codedeploy:CreateDeployment
+                  - codedeploy:CreateDeploymentGroup
+                  - codedeploy:GetApplication
+                  - codedeploy:GetApplicationRevision
+                  - codedeploy:GetDeployment
+                  - codedeploy:GetDeploymentConfig
+                  - codedeploy:RegisterApplicationRevision
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codecommit:*
+      RoleName: !Sub 'code-pipeline-role-${ProjectName}'
+    Type: AWS::IAM::Role
+  ProjectPipeline:
+    Description: Creating a deployment pipeline for your project in AWS CodePipeline
+    Properties:
+      Name: !Sub '${ProjectName}-${ProjectVersion}'
+      RoleArn: !GetAtt 'CodePipelineRole.Arn'
+      ArtifactStore:
+        Location: !Ref 'ArtifactOutputBucketName'
+        Type: S3
+      Stages:
+        - Name: SourceStage
+          Actions:
+            - Name: CodeCommit
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: 1
+              OutputArtifacts:
+                - Name: !Ref ArtifactOutputBucket
+              Configuration:
+                BranchName: !Ref BranchName
+                RepositoryName: !Ref ProjectName
+                PollForSourceChanges: false
+              Namespace: GitVariables
+        - Name: BuildStage
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref 'ProjectName'
+              InputArtifacts:
+                - Name: !Ref ArtifactOutputBucket
+              OutputArtifacts:
+                - Name: !Sub '${ProjectName}-zip'
+        - Name: DeployStage
+          Actions:
+            - Name: CodeDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CodeDeploy
+                Version: 1
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref CodeDeployDeploymentGroup
+              InputArtifacts:
+                - Name: !Sub '${ProjectName}-zip'
+    Type: AWS::CodePipeline::Pipeline
+
+
+Outputs:
+  ArtifactOutputBucket:
+    Value: !Ref ArtifactOutputBucket
