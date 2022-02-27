@@ -42,10 +42,6 @@ infrastructure:
 cicd:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
-    OUTPUT_BUCKET_NAME=$(PROJECT_NAME)-output && \
-	aws s3 mb s3://$${OUTPUT_BUCKET_NAME} || true && \
-	./infra/utils/ecs_springboot_buildspec.sh $(PROJECT_NAME) && \
-	aws s3 cp ./buildspec.yml s3://$${OUTPUT_BUCKET_NAME}/buildspec.yml && \
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--template-file ./infra/pipeline/cicd.yml \
@@ -54,8 +50,7 @@ cicd:
 			ProjectName=$(PROJECT_NAME) \
 			ProjectVersion=$${MAVEN_PROJECT_VERSION} \
 			MavenProjectName=$${MAVEN_PROJECT_NAME} \
-			InfrastructureStackName=$(PROJECT_NAME)-infrastructure \
-			ArtifactOutputBucket=$${OUTPUT_BUCKET_NAME}
+			InfrastructureStackName=$(PROJECT_NAME)-infrastructure
 
 destroy:
 	@MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
