@@ -9,6 +9,9 @@ Parameters:
     Type: String
   InfrastructureStackName:
     Type: String
+  BranchName:
+    Type: String
+    Default: main
 
 Resources:
 
@@ -78,8 +81,6 @@ Resources:
       ServiceRole: !Ref CodeBuildServiceRole
       Source:
         Type: CODEPIPELINE
-        GitSubmodulesConfig:
-          FetchSubmodules: true
       SourceVersion: main
       Artifacts:
         Type: CODEPIPELINE
@@ -165,6 +166,21 @@ Resources:
         Location: !Ref ArtifactOutputBucket
         Type: S3
       Stages:
+        - Name: SourceStage
+          Actions:
+            - Name: CodeCommit
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: 1
+              OutputArtifacts:
+                - Name: !Ref ArtifactOutputBucket
+              Configuration:
+                BranchName: !Ref BranchName
+                RepositoryName: !Ref ProjectName
+                PollForSourceChanges: false
+              Namespace: GitVariables
         - Name: BuildStage
           Actions:
             - Name: CodeBuild

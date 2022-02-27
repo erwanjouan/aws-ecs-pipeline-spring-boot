@@ -8,6 +8,9 @@ https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html
 
 Blue Green deployment is now available on Cloudformation with a lot of restrictions and no supervizing mmi.
 
+ECR as source produces a file imageDetails.json, whereas ECS deployment expects imageDefinition.json
+S3 a codepipeline source requires S3 Bucket to be versioned
+
 
 ### AWS CodeDeploy Blue / Green Deployment to Amazon ECS
 
