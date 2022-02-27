@@ -2,13 +2,6 @@
 
 REPOSITORY_NAME=$1
 REGION=eu-west-1
-cat <<EOF > .gitignore
-target
-.idea
-*.iml
-*.zip
-.DS_Store
-EOF
 
 git init
 git add .

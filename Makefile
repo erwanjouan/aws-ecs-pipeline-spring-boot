@@ -4,10 +4,8 @@ init:
 	PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
 	PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
 	INIT_BUCKET_NAME=$${PROJECT_NAME}-init && \
-	mvn clean && \
-	./infra/pipeline/code-build/generate_buildspec.sh $${PROJECT_NAME} && \
-	cp infra/pipeline/code-deploy/appspec.yml . && \
-	cp infra/pipeline/code-deploy/*.sh . && \
+	mvn clean -f code/pom.xml && \
+	./infra/utils/ecs_springboot_buildspec.sh $${PROJECT_NAME} && \
 	zip -r $${PROJECT_NAME}.zip * && \
 	aws s3 mb s3://$${INIT_BUCKET_NAME} &&\
 	aws s3 cp $${PROJECT_NAME}.zip s3://$${INIT_BUCKET_NAME}/init/ && \
