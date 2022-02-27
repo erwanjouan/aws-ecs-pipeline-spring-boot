@@ -285,6 +285,7 @@ Resources:
       ServiceName: !Ref 'MavenProjectName'
       Cluster: !Ref 'EcsFargateCluster'
       LaunchType: FARGATE
+      DesiredCount: 0
       LoadBalancers:
         - TargetGroupArn: !Ref ALBTargetGroup # loadBalancerName and targetGroupArn cannot both be specified. You must specify either a loadBalancerName or a targetGroupArn.
           #LoadBalancerName: !Ref 'LoadBalancerName'
