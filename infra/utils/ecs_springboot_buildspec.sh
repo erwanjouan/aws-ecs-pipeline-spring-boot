@@ -19,13 +19,11 @@ phases:
       - echo Building the Docker image...
       - mvn spring-boot:build-image -f code/pom.xml
       - docker tag \$MAVEN_PROJECT_NAME:\$PROJECT_VERSION \$REPOSITORY_URI:\$IMAGE_TAG
-      - docker tag \$MAVEN_PROJECT_NAME:\$PROJECT_VERSION \$REPOSITORY_URI:latest
+      - echo Pushing the Docker images...
+      - docker push \$REPOSITORY_URI:\$IMAGE_TAG
   post_build:
     commands:
       - echo Build started on \$(date)
-      - echo Pushing the Docker images...
-      - docker push \$REPOSITORY_URI:latest
-      - docker push \$REPOSITORY_URI:\$IMAGE_TAG
       - cp infra/pipeline/*.yml .
 
 artifacts:
