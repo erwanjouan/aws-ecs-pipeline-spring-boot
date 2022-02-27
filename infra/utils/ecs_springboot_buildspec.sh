@@ -19,6 +19,7 @@ phases:
       - echo Building the Docker image...
       - mvn spring-boot:build-image -f code/pom.xml
       - docker tag \$MAVEN_PROJECT_NAME:\$PROJECT_VERSION \$REPOSITORY_URI:\$IMAGE_TAG
+      - docker tag \$MAVEN_PROJECT_NAME:\$PROJECT_VERSION \$REPOSITORY_URI:latest
       - echo Pushing the Docker images...
       - echo REPOSITORY_URI \$REPOSITORY_URI
       - echo IMAGE_TAG \$IMAGE_TAG
