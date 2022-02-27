@@ -100,6 +100,9 @@ Resources:
           - Name: PROJECT_NAME
             Type: PLAINTEXT
             Value: !Ref ProjectName
+          - Name: MAVEN_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref MavenProjectName
           - Name: PROJECT_VERSION
             Type: PLAINTEXT
             Value: !Ref ProjectVersion
@@ -143,12 +146,18 @@ Resources:
       DeploymentConfigName: !Ref DeploymentConfigName
       DeploymentGroupName: !Ref ProjectName
       ECSServices:
-        - ClusterName: !Ref MavenProjectName
-          ServiceName: !Ref MavenProjectName
+        - ClusterName: !Sub "${InfrastructureStackName}-EcsFargateCluster"
+          ServiceName: !Sub "${InfrastructureStackName}-EcsFargateService"
+      BlueGreenDeploymentConfiguration:
+
       LoadBalancerInfo:
         TargetGroupInfoList:
-          - Name: !ImportValue TargetGroupName
-          - Name: !ImportValue TargetGroup2Name
+          - Name:
+              Fn::ImportValue:
+                !Sub "${InfrastructureStackName}-TargetGroupName"
+          - Name:
+              Fn::ImportValue:
+                !Sub "${InfrastructureStackName}-TargetGroup2Name"
       DeploymentStyle:
         DeploymentOption: WITHOUT_TRAFFIC_CONTROL
         DeploymentType: IN_PLACE

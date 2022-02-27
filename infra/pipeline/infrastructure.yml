@@ -8,6 +8,8 @@ Parameters:
   ApplicationPort:
     Type: String
     Default: 8080
+  DesiredCount:
+    Type: String
   AlbPort:
     Type: String
     Default: 80
@@ -285,7 +287,7 @@ Resources:
       ServiceName: !Ref 'MavenProjectName'
       Cluster: !Ref 'EcsFargateCluster'
       LaunchType: FARGATE
-      DesiredCount: 0
+      DesiredCount: !Ref DesiredCount
       LoadBalancers:
         - TargetGroupArn: !Ref ALBTargetGroup # loadBalancerName and targetGroupArn cannot both be specified. You must specify either a loadBalancerName or a targetGroupArn.
           #LoadBalancerName: !Ref 'LoadBalancerName'
@@ -355,13 +357,25 @@ Resources:
 Outputs:
   LoadBalancerName:
     Value: !GetAtt 'ApplicationLoadBalancer.LoadBalancerName'
+    Export:
+      Name: !Sub "${AWS::StackName}-LoadBalancerName"
   LoadBalanderDNSName:
     Value: !GetAtt 'ApplicationLoadBalancer.DNSName'
+    Export:
+      Name: !Sub "${AWS::StackName}-LoadBalanderDNSName"
   TargetGroupName:
     Value: !GetAtt 'ALBTargetGroup.TargetGroupName'
+    Export:
+      Name: !Sub "${AWS::StackName}-TargetGroupName"
   TargetGroup2Name:
     Value: !GetAtt 'ALBTargetGroup2.TargetGroupName'
+    Export:
+      Name: !Sub "${AWS::StackName}-TargetGroup2Name"
   EcsFargateService:
     Value: !GetAtt 'EcsFargateService.Name'
+    Export:
+      Name: !Sub "${AWS::StackName}-EcsFargateService"
   EcsFargateCluster:
     Value: !Ref EcsFargateCluster
+    Export:
+      Name: !Sub "${AWS::StackName}-EcsFargateCluster"

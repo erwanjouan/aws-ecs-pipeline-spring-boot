@@ -16,8 +16,8 @@ init:
 			ProjectName=$(PROJECT_NAME) \
 			ArtifactInputBucketName=$${INIT_BUCKET_NAME} && \
 	aws s3 sync ./infra/pipeline/ s3://$${INIT_BUCKET_NAME}/cloudformation/ && \
-	./infra/utils/git_init.sh $(PROJECT_NAME) && \
-	make push
+	./infra/utils/git_init.sh $(PROJECT_NAME)
+	#make push
 
 push:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
@@ -38,10 +38,12 @@ infrastructure:
 		--stack-name $(PROJECT_NAME)-infrastructure \
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
-			MavenProjectName=$${MAVEN_PROJECT_NAME}
+			MavenProjectName=$${MAVEN_PROJECT_NAME} \
+			DesiredCount=0
 cicd:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
+	aws ecr create-repository --repository-name $${MAVEN_PROJECT_NAME} || true && \
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--template-file ./infra/pipeline/cicd.yml \
@@ -49,7 +51,29 @@ cicd:
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
 			ProjectVersion=$${MAVEN_PROJECT_VERSION} \
-			MavenProjectName=$${MAVEN_PROJECT_NAME}
+			MavenProjectName=$${MAVEN_PROJECT_NAME} \
+			InfrastructureStackName=$(PROJECT_NAME)-infrastructure
+
+network:
+	NETWORK_STACK=$(PROJECT_NAME)-network && \
+	aws cloudformation deploy \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--template-file ./infra/pipeline/network.yml \
+		--stack-name $${NETWORK_STACK}
+
+bluegreen:
+	NETWORK_STACK=$(PROJECT_NAME)-network && \
+	VPC_ID=$$(./infra/utils/get_stack_export.sh $${NETWORK_STACK} "VPC") && \
+	PUBLIC_SUBNET_1=$$(./infra/utils/get_stack_export.sh $${NETWORK_STACK} "PublicSubnet1") && \
+	PUBLIC_SUBNET_2=$$(./infra/utils/get_stack_export.sh $${NETWORK_STACK} "PublicSubnet2") && \
+	aws cloudformation deploy \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--template-file ./infra/pipeline/bluegreen.yml \
+		--stack-name $(PROJECT_NAME)-bluegreen \
+		--parameter-overrides \
+			VPC=$${VPC_ID} \
+			Subnet1=$${PUBLIC_SUBNET_1} \
+			Subnet2=$${PUBLIC_SUBNET_2}
 
 destroy:
 	@MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
