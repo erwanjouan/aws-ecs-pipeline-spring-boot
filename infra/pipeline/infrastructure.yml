@@ -3,7 +3,7 @@ Description: A Java SpringBoot application deployed with ECS with CodeBuild/Depl
 Parameters:
   ProjectName:
     Type: String
-  ProjectVersion:
+  MavenProjectName:
     Type: String
   ApplicationPort:
     Type: String
@@ -244,13 +244,13 @@ Resources:
   EcsFargateLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /ecs/fargate/${ProjectName}
+      LogGroupName: !Sub /ecs/fargate/${MavenProjectName}
 
   EcsFargateTaskDefinition:
     Description: ECS Task Definition
     Properties:
       NetworkMode: awsvpc
-      Family: !Ref ProjectName
+      Family: !Ref MavenProjectName
       Cpu: 512
       Memory: 1024
       ExecutionRoleArn: !Ref ECSTaskExecutionRole # Fargate requires task definition to have execution role ARN to support ECR images
@@ -258,13 +258,11 @@ Resources:
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
-        - Name: !Ref ProjectName
-          Image: !Sub '467420073914.dkr.ecr.eu-west-1.amazonaws.com/${ProjectName}:latest'
+        - Name: !Ref MavenProjectName
+          Image: !Sub '467420073914.dkr.ecr.eu-west-1.amazonaws.com/${MavenProjectName}:latest'
           Environment:
             - Name: SERVER_PORT
               Value: !Ref ApplicationPort
-            - Name: DEPLOYMENT_DATE
-              Value: !Ref ProjectVersion
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -278,19 +276,20 @@ Resources:
   EcsFargateCluster:
     Description: ECS Cluster
     Properties:
-      ClusterName: !Ref 'ProjectName'
+      ClusterName: !Ref 'MavenProjectName'
     Type: AWS::ECS::Cluster
 
   EcsFargateService:
     Description: ECS Service
     Properties:
+      ServiceName: !Ref 'MavenProjectName'
       Cluster: !Ref 'EcsFargateCluster'
       LaunchType: FARGATE
       LoadBalancers:
         - TargetGroupArn: !Ref ALBTargetGroup # loadBalancerName and targetGroupArn cannot both be specified. You must specify either a loadBalancerName or a targetGroupArn.
           #LoadBalancerName: !Ref 'LoadBalancerName'
           ContainerPort: !Ref 'ApplicationPort'
-          ContainerName: !Ref 'ProjectName'
+          ContainerName: !Ref 'MavenProjectName'
       NetworkConfiguration:
         AwsvpcConfiguration:
           #AssignPublicIp: ENABLED # unless a NAT / Route needs to be opened to ECR

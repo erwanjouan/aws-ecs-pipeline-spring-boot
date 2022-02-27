@@ -30,28 +30,36 @@ push:
 	docker push $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:latest && \
 	docker push $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:$${MAVEN_PROJECT_VERSION}
 
-deploy:
-	PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
-	MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
-	INIT_BUCKET_NAME=$(PROJECT_NAME)-init && \
-	aws s3 sync ./infra/pipeline/ s3://$${INIT_BUCKET_NAME}/cloudformation/ && \
+infrastructure:
+	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     aws cloudformation deploy \
-		--capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-		--template-file ./infra/pipeline/_global.yml \
-		--stack-name $(PROJECT_NAME)-global \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--template-file ./infra/pipeline/infrastructure.yml \
+		--stack-name $(PROJECT_NAME)-infrastructure \
+		--parameter-overrides \
+			ProjectName=$(PROJECT_NAME) \
+			MavenProjectName=$${MAVEN_PROJECT_NAME}
+cicd:
+	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
+    MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
+	aws cloudformation deploy \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--template-file ./infra/pipeline/cicd.yml \
+		--stack-name $(PROJECT_NAME)-cicd \
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
 			ProjectVersion=$${MAVEN_PROJECT_VERSION} \
-			ArtifactInitBucketName=$${INIT_BUCKET_NAME}
+			MavenProjectName=$${MAVEN_PROJECT_NAME}
 
 destroy:
-	@PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
+	@MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
 	INIT_BUCKET_NAME=$(PROJECT_NAME)-init && \
 	aws s3 rm s3://$(PROJECT_NAME)-output --recursive || true && \
 	aws s3 rm s3://$${INIT_BUCKET_NAME} --recursive || true && \
-	aws s3 rb s3://$${INIT_BUCKET_NAME} && \
-	aws ecr delete-repository --force --repository-name $(PROJECT_NAME) && \
-	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-global || true && \
+	aws s3 rb s3://$${INIT_BUCKET_NAME}  || true && \
+	aws ecr delete-repository --force --repository-name $${MAVEN_PROJECT_NAME} && \
+	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-cicd || true && \
+	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-infrastructure || true && \
 	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-init || true
 
 check:

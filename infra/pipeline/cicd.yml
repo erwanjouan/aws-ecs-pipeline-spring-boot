@@ -5,6 +5,10 @@ Parameters:
     Type: String
   ProjectVersion:
     Type: String
+  MavenProjectName:
+    Type: String
+  InfrastructureStackName:
+    Type: String
   BranchName:
     Type: String
     Default: main
@@ -139,8 +143,8 @@ Resources:
       DeploymentConfigName: !Ref DeploymentConfigName
       DeploymentGroupName: !Ref ProjectName
       ECSServices:
-        - ClusterName: !ImportValue EcsFargateService
-          ServiceName: !ImportValue EcsFargateService
+        - ClusterName: !Ref MavenProjectName
+          ServiceName: !Ref MavenProjectName
       LoadBalancerInfo:
         TargetGroupInfoList:
           - Name: !ImportValue TargetGroupName
@@ -202,7 +206,7 @@ Resources:
       Name: !Sub '${ProjectName}-${ProjectVersion}'
       RoleArn: !GetAtt 'CodePipelineRole.Arn'
       ArtifactStore:
-        Location: !Ref 'ArtifactOutputBucketName'
+        Location: !Ref ArtifactOutputBucket
         Type: S3
       Stages:
         - Name: SourceStage
