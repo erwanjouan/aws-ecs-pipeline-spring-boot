@@ -20,18 +20,19 @@ init:
 	make push
 
 push:
-	PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
-	aws ecr create-repository --repository-name $(PROJECT_NAME) || true && \
+	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
+	MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
+	aws ecr create-repository --repository-name $${MAVEN_PROJECT_NAME} || true && \
 	mvn spring-boot:build-image -f code/pom.xml && \
 	aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin $(ECR_ROOT_URL) && \
-	docker tag $(PROJECT_NAME):$${PROJECT_VERSION} $(ECR_ROOT_URL)/$(PROJECT_NAME):$${PROJECT_VERSION} && \
-	docker tag $(PROJECT_NAME):$${PROJECT_VERSION} $(ECR_ROOT_URL)/$(PROJECT_NAME):latest && \
-	docker push $(ECR_ROOT_URL)/$(PROJECT_NAME):latest && \
-	docker push $(ECR_ROOT_URL)/$(PROJECT_NAME):$${PROJECT_VERSION}
+	docker tag $${MAVEN_PROJECT_NAME}:$${MAVEN_PROJECT_VERSION} $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:$${MAVEN_PROJECT_VERSION} && \
+	docker tag $${MAVEN_PROJECT_NAME}:$${MAVEN_PROJECT_VERSION} $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:latest && \
+	docker push $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:latest && \
+	docker push $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:$${MAVEN_PROJECT_VERSION}
 
 deploy:
 	PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
-	PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
+	MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
 	INIT_BUCKET_NAME=$(PROJECT_NAME)-init && \
 	aws s3 sync ./infra/pipeline/ s3://$${INIT_BUCKET_NAME}/cloudformation/ && \
     aws cloudformation deploy \
@@ -40,7 +41,7 @@ deploy:
 		--stack-name $(PROJECT_NAME)-global \
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
-			ProjectVersion=$${PROJECT_VERSION} \
+			ProjectVersion=$${MAVEN_PROJECT_VERSION} \
 			ArtifactInitBucketName=$${INIT_BUCKET_NAME}
 
 destroy:
