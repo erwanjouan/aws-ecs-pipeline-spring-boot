@@ -190,7 +190,7 @@ Resources:
                 Provider: CodeBuild
                 Version: 1
               Configuration:
-                ProjectName: !Ref 'ProjectName'
+                ProjectName: !Ref CodeBuildJavaProject
               InputArtifacts:
                 - Name: !Ref ArtifactOutputBucket
               OutputArtifacts:
@@ -201,15 +201,15 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Provider: Amazon ECS
+                Provider: ECS
                 Version: 1
               Configuration:
                 ClusterName:
                   Fn::ImportValue:
-                    !Sub "${InfrastructureStackName}-ClusterName"
+                    !Sub "${InfrastructureStackName}-EcsFargateCluster"
                 ServiceName:
                   Fn::ImportValue:
-                    !Sub "${InfrastructureStackName}-ClusterName"
+                    !Sub "${InfrastructureStackName}-EcsFargateService"
               InputArtifacts:
                 - Name: !Sub '${ProjectName}-zip'
     Type: AWS::CodePipeline::Pipeline

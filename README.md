@@ -1,6 +1,8 @@
 # aws-ecs-pipeline-spring-boot
 
-In blue-green deployment of java spring boot application on ECS
+Amazon ECS Standard Deployment with CodePipeline
+
+https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html
 
 ### AWS CodeDeploy Blue / Green Deployment to Amazon ECS
 
