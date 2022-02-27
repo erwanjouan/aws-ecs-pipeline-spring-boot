@@ -26,11 +26,10 @@ phases:
       - echo Pushing the Docker images...
       - docker push \$REPOSITORY_URI:latest
       - docker push \$REPOSITORY_URI:\$IMAGE_TAG
-      - echo Writing image definitions file...
-      - printf '[{"name":"${MAVEN_PROJECT_NAME}","imageUri":"%s"}]' \$REPOSITORY_URI:\$IMAGE_TAG > imagedefinitions.json
+      - cp infra/pipeline/*.yml .
 
 artifacts:
-  files: imagedefinitions.json
+  files: ./cicd.yml
 
 cache:
   paths:
