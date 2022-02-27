@@ -1,3 +1,6 @@
 [submodule "basic-web-spring-boot"]
 	path = code
 	url = https://github.com/erwanjouan/basic-web-spring-boot
+[submodule "code"]
+	path = code
+	url = https://github.com/erwanjouan/basic-web-spring-boot
