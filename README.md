@@ -4,6 +4,11 @@ Amazon ECS Standard Deployment with CodePipeline
 
 https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html
 
+### Notes
+
+Blue Green deployment is now available on Cloudformation with a lot of restrictions and no supervizing mmi.
+
+
 ### AWS CodeDeploy Blue / Green Deployment to Amazon ECS
 
 https://www.youtube.com/watch?v=ekh2uW1VU6U

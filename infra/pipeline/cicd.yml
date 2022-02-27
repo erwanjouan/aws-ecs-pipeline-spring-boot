@@ -81,6 +81,8 @@ Resources:
       ServiceRole: !Ref CodeBuildServiceRole
       Source:
         Type: CODEPIPELINE
+        GitSubmodulesConfig:
+          FetchSubmodules: true
       SourceVersion: main
       Artifacts:
         Type: CODEPIPELINE

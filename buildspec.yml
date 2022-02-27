@@ -13,6 +13,7 @@ phases:
     commands:
       - echo Build started on $(date)
       - echo Building the Docker image...
+      - git submodule update --init
       - mvn spring-boot:build-image -f code/pom.xml
       - docker tag $MAVEN_PROJECT_NAME:$PROJECT_VERSION $REPOSITORY_URI:$IMAGE_TAG
       - docker tag $MAVEN_PROJECT_NAME:$PROJECT_VERSION $REPOSITORY_URI:latest
