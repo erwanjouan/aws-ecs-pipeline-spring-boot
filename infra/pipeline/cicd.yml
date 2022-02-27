@@ -12,9 +12,6 @@ Parameters:
   BranchName:
     Type: String
     Default: main
-  DeploymentConfigName:
-    Type: String
-    Default: CodeDeployDefault.HalfAtATime
 
 Resources:
 
@@ -100,6 +97,9 @@ Resources:
           - Name: PROJECT_NAME
             Type: PLAINTEXT
             Value: !Ref ProjectName
+          - Name: MAVEN_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref MavenProjectName
           - Name: PROJECT_VERSION
             Type: PLAINTEXT
             Value: !Ref ProjectVersion
@@ -110,49 +110,6 @@ Resources:
         Location: !Sub '${ArtifactOutputBucket}/cache'
         Type: S3
     Type: AWS::CodeBuild::Project
-
-  #############
-  # CodeDeploy
-  #############
-
-  CodeDeployer:
-    Properties:
-      Description: Provides CodeDeploy service access to expand tags and interact with Auto Scaling on your behalf.
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          Effect: Allow
-          Principal:
-            Service: codedeploy.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole
-      Path: /
-    Type: AWS::IAM::Role
-
-  CodeDeployApplication:
-    Properties:
-      ApplicationName: !Sub ${ProjectName}-app
-      ComputePlatform: ECS
-    Type: AWS::CodeDeploy::Application
-
-  CodeDeployDeploymentGroup:
-    Properties:
-      ApplicationName: !Ref CodeDeployApplication
-      ServiceRoleArn: !GetAtt CodeDeployer.Arn
-      DeploymentConfigName: !Ref DeploymentConfigName
-      DeploymentGroupName: !Ref ProjectName
-      ECSServices:
-        - ClusterName: !Ref MavenProjectName
-          ServiceName: !Ref MavenProjectName
-      LoadBalancerInfo:
-        TargetGroupInfoList:
-          - Name: !ImportValue TargetGroupName
-          - Name: !ImportValue TargetGroup2Name
-      DeploymentStyle:
-        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
-        DeploymentType: IN_PLACE
-    Type: AWS::CodeDeploy::DeploymentGroup
 
   ###############
   # CodePipeline
@@ -244,11 +201,15 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Provider: CodeDeploy
+                Provider: Amazon ECS
                 Version: 1
               Configuration:
-                ApplicationName: !Ref CodeDeployApplication
-                DeploymentGroupName: !Ref CodeDeployDeploymentGroup
+                ClusterName:
+                  Fn::ImportValue:
+                    !Sub "${InfrastructureStackName}-ClusterName"
+                ServiceName:
+                  Fn::ImportValue:
+                    !Sub "${InfrastructureStackName}-ClusterName"
               InputArtifacts:
                 - Name: !Sub '${ProjectName}-zip'
     Type: AWS::CodePipeline::Pipeline

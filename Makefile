@@ -16,8 +16,7 @@ init:
 			ProjectName=$(PROJECT_NAME) \
 			ArtifactInputBucketName=$${INIT_BUCKET_NAME} && \
 	aws s3 sync ./infra/pipeline/ s3://$${INIT_BUCKET_NAME}/cloudformation/ && \
-	./infra/utils/git_init.sh $(PROJECT_NAME) && \
-	make push
+	./infra/utils/git_init.sh $(PROJECT_NAME)
 
 push:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
@@ -38,10 +37,12 @@ infrastructure:
 		--stack-name $(PROJECT_NAME)-infrastructure \
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
-			MavenProjectName=$${MAVEN_PROJECT_NAME}
+			MavenProjectName=$${MAVEN_PROJECT_NAME} \
+			DesiredCount=0
 cicd:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
+	aws ecr create-repository --repository-name $${MAVEN_PROJECT_NAME} || true && \
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--template-file ./infra/pipeline/cicd.yml \
@@ -49,7 +50,9 @@ cicd:
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
 			ProjectVersion=$${MAVEN_PROJECT_VERSION} \
-			MavenProjectName=$${MAVEN_PROJECT_NAME}
+			MavenProjectName=$${MAVEN_PROJECT_NAME} \
+			InfrastructureStackName=$(PROJECT_NAME)-infrastructure
+
 
 destroy:
 	@MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
@@ -60,7 +63,9 @@ destroy:
 	aws ecr delete-repository --force --repository-name $${MAVEN_PROJECT_NAME} && \
 	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-cicd || true && \
 	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-infrastructure || true && \
-	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-init || true
+	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-init || true && \
+	git remote remove origin  && \
+	git remote add origin git@github.com:erwanjouan/$(PROJECT_NAME).git || true
 
 check:
 	cd ./infra/utils/ && ./control_page.sh && cat control_page.html && cd -
