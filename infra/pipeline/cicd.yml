@@ -159,7 +159,9 @@ Resources:
                 Action:
                   - codecommit:*
               - Effect: Allow
-                Action: cloudformation:CreateStack
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
                 Resource: '*'
       RoleName: !Sub 'code-pipeline-role-${ProjectName}'
     Type: AWS::IAM::Role
