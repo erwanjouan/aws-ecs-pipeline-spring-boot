@@ -15,7 +15,6 @@ init:
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
 			ArtifactInputBucketName=$${INIT_BUCKET_NAME} && \
-	aws s3 sync ./infra/pipeline/ s3://$${INIT_BUCKET_NAME}/cloudformation/ && \
 	./infra/utils/git_init.sh $(PROJECT_NAME)
 
 push:

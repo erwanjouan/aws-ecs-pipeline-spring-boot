@@ -23,8 +23,7 @@ phases:
       - echo Pushing the Docker images...
       - echo REPOSITORY_URI \$REPOSITORY_URI
       - echo IMAGE_TAG \$IMAGE_TAG
-      - docker push \$REPOSITORY_URI:\$IMAGE_TAG
-      - docker push \$REPOSITORY_URI:latest
+      - docker push \$REPOSITORY_URI
   post_build:
     commands:
       - echo Build started on \$(date)
