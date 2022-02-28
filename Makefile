@@ -29,17 +29,7 @@ push:
 	docker push $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:latest && \
 	docker push $(ECR_ROOT_URL)/$${MAVEN_PROJECT_NAME}:$${MAVEN_PROJECT_VERSION}
 
-infrastructure:
-	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
-    aws cloudformation deploy \
-		--capabilities CAPABILITY_NAMED_IAM \
-		--template-file ./infra/pipeline/infrastructure.yml \
-		--stack-name $(PROJECT_NAME)-infrastructure \
-		--parameter-overrides \
-			ProjectName=$(PROJECT_NAME) \
-			MavenProjectName=$${MAVEN_PROJECT_NAME}
-
-cicd:
+deploy:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
 	aws ecr create-repository --repository-name $${MAVEN_PROJECT_NAME} || true && \
@@ -62,6 +52,7 @@ destroy:
 	aws ecr delete-repository --force --repository-name $${MAVEN_PROJECT_NAME} && \
 	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-cicd || true && \
 	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-infrastructure || true && \
+	aws cloudformation delete-stack --stack-name $(PROJECT_NAME)-init || true && \
 	git remote remove origin  && \
 	git remote add origin git@github.com:erwanjouan/$(PROJECT_NAME).git || true
 
