@@ -3,8 +3,9 @@ PROJECT_NAME:=aws-ecs-pipeline-spring-boot
 
 init:
 	INIT_BUCKET_NAME=$(PROJECT_NAME)-init && \
+	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
 	mvn clean -f code/pom.xml && \
-	./infra/utils/ecs_springboot_buildspec.sh $(PROJECT_NAME) && \
+	./infra/utils/ecs_springboot_buildspec.sh ${MAVEN_PROJECT_NAME} && \
 	zip -r $(PROJECT_NAME).zip * && \
 	aws s3 mb s3://$${INIT_BUCKET_NAME} &&\
 	aws s3 cp $(PROJECT_NAME).zip s3://$${INIT_BUCKET_NAME}/init/ && \
