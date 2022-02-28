@@ -5,6 +5,8 @@ Parameters:
     Type: String
   MavenProjectName:
     Type: String
+  ImageTag:
+    Type: String
   ApplicationPort:
     Type: String
     Default: 8080
@@ -262,7 +264,7 @@ Resources:
         - FARGATE
       ContainerDefinitions:
         - Name: !Ref MavenProjectName
-          Image: !Sub '467420073914.dkr.ecr.eu-west-1.amazonaws.com/${MavenProjectName}:latest'
+          Image: !Sub '467420073914.dkr.ecr.eu-west-1.amazonaws.com/${MavenProjectName}:${ImageTag}'
           Environment:
             - Name: SERVER_PORT
               Value: !Ref ApplicationPort

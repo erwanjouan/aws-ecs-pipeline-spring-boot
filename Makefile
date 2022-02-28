@@ -32,6 +32,7 @@ deploy:
 	MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \
     MAVEN_PROJECT_VERSION=$$(./infra/utils/get_mvn_project_version.sh) && \
 	aws ecr create-repository --repository-name $${MAVEN_PROJECT_NAME} || true && \
+ 	IMAGE_TAG=$$(git rev-parse --short HEAD:code) && \
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--template-file ./infra/pipeline/cicd.yml \
@@ -40,7 +41,8 @@ deploy:
 			ProjectName=$(PROJECT_NAME) \
 			ProjectVersion=$${MAVEN_PROJECT_VERSION} \
 			MavenProjectName=$${MAVEN_PROJECT_NAME} \
-			InfrastructureStackName=$(PROJECT_NAME)-infrastructure
+			InfrastructureStackName=$(PROJECT_NAME)-infrastructure \
+			ImageTag=$${IMAGE_TAG}
 
 destroy:
 	@MAVEN_PROJECT_NAME=$$(./infra/utils/get_mvn_project_name.sh) && \

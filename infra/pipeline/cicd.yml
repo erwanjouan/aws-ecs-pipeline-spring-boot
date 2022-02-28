@@ -12,6 +12,8 @@ Parameters:
   BranchName:
     Type: String
     Default: main
+  ImageTag:
+    Type: String
 
 Resources:
 
@@ -109,6 +111,9 @@ Resources:
           - Name: GIT_COMMIT_ID
             Type: PLAINTEXT
             Value: '#{GitVariables.CommitId}'
+          - Name: IMAGE_TAG
+            Type: PLAINTEXT
+            Value: !Ref ImageTag
       Cache:
         Location: !Sub '${ArtifactOutputBucket}/cache'
         Type: S3
@@ -217,7 +222,7 @@ Resources:
                 Capabilities: CAPABILITY_IAM
                 RoleArn: arn:aws:iam::467420073914:role/CloudformationRole
                 TemplatePath: !Sub ${ProjectName}-zip::infrastructure.yml
-                ParameterOverrides: !Sub '{"ProjectName": "${ProjectName}","MavenProjectName": "${MavenProjectName}"}'
+                ParameterOverrides: !Sub '{"ProjectName": "${ProjectName}","MavenProjectName": "${MavenProjectName}", "ImageTag": "${ImageTag}"}'
               InputArtifacts:
                 - Name: !Sub '${ProjectName}-zip'
     Type: AWS::CodePipeline::Pipeline
