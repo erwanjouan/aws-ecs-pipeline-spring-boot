@@ -1,6 +1,6 @@
 #!/bin/sh
 # https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html
-MAVEN_PROJECT_NAME=$1 && cat <<EOF > buildspec.yml
+cat <<EOF > buildspec.yml
 version: 0.2
 # https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html
 phases:
@@ -12,7 +12,7 @@ phases:
       - REPOSITORY_URI=467420073914.dkr.ecr.eu-west-1.amazonaws.com/\$MAVEN_PROJECT_NAME
       - COMMIT_HASH=\$(echo \$CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=\${COMMIT_HASH:=latest}
-      - git clone https://github.com/erwanjouan/$MAVEN_PROJECT_NAME.git code
+      - git clone https://github.com/erwanjouan/\$MAVEN_PROJECT_NAME.git code
   build:
     commands:
       - echo Build started on \$(date)
