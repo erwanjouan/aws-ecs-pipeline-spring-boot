@@ -193,6 +193,7 @@ Resources:
                 BranchName: !Ref BranchName
                 RepositoryName: !Ref ProjectName
                 PollForSourceChanges: false
+                OutputArtifactFormat: CODEBUILD_CLONE_REF
               Namespace: GitVariables
         - Name: BuildStage
           Actions:

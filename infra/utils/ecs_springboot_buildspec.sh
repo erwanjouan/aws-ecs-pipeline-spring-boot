@@ -3,6 +3,8 @@
 cat <<EOF > buildspec.yml
 version: 0.2
 # https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html
+env:
+  git-credential-helper: yes
 phases:
   pre_build:
     commands:
@@ -10,7 +12,7 @@ phases:
       - aws --version
       - aws ecr get-login --no-include-email --region eu-west-1 | sh
       - REPOSITORY_URI=467420073914.dkr.ecr.eu-west-1.amazonaws.com/\$MAVEN_PROJECT_NAME
-      - git clone https://github.com/erwanjouan/\$MAVEN_PROJECT_NAME.git code
+      - git submodule update --init --recursive
   build:
     commands:
       - echo Build started on \$(date)
